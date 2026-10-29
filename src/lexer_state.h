@@ -11,7 +11,7 @@ void lexer_previous_end(int *line, int *col);
 int lexer_open_braces(void);
 
 /* Asks the lexer to hand the parser a virtual ';' before the lookahead token
- * (repair of a missing ';'). Ignored unless it is safe. */
+ * Ignored unless it is safe. */
 void lexer_request_repair(void);
 
 #endif

@@ -62,8 +62,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    /* Phase 1: preprocess (#include, #define) into a temp file plus an
-     * origin map used to report original positions. */
+    /* Phase 1: preprocess into a temp file plus an origin map used to report original positions */
     PreprocessedFile preprocessed;
     if (!preprocessor_run(argv[optind], &preprocessed)) {
         fprintf(stderr, "%s: error: %s: no se pudo preprocesar el archivo\n",

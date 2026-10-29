@@ -74,7 +74,7 @@ void symtab_enter_scope(void)
 }
 
 /* Drops every entry declared deeper than depth. Safe to call with a depth the
- * parser reached before an error recovery unwound some scopes. */
+ * parser reached before an error recovery */
 void symtab_restore(int depth)
 {
     while (entry_count > 0 && entries[entry_count - 1].depth > depth) entry_count--;

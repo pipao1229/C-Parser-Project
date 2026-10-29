@@ -7,12 +7,11 @@
 #include "scanner.h"
 #include "token.h"
 
-/* Flex's function is renamed so yylex stays free for the bison adapter;
- * Get_Token() is the scanner's only public entry point. */
+/* Flex's function is renamed so yylex stays free for the bison adapter
+ * Get_Token() is the scanner's only public entry point */
 #define YY_DECL static int flex_next(void)
 
-/* Cursor (1-based). Columns count bytes (tabs are not expanded) so they
- * index directly into the source line. */
+/* Columns count bytes (tabs are not expanded) so they index directly into the source line */
 static int sc_line = 1;
 static int sc_col = 1;
 
@@ -23,8 +22,7 @@ static int tok_len = 0;
 
 static int at_eof = 0;
 
-/* Runs before every action: records where the lexeme starts and advances
- * the cursor, so no rule has to track columns. */
+/* Records where the lexeme starts and advances the cursor, so no rule has to track columns */
 #define YY_USER_ACTION      \
     tok_line = sc_line;     \
     tok_col  = sc_col;      \
@@ -54,7 +52,7 @@ FLOAT_SUFF  [fFlL]
 [ \t\r\f\v]+    { /* column already advanced by YY_USER_ACTION */ }
 \n              { sc_line++; sc_col = 1; }
 
-    /* ---------- Keywords ---------- */
+    /* Keywords */
 
 "void"          { return KW_VOID; }
 "char"          { return KW_CHAR; }
@@ -99,8 +97,8 @@ FLOAT_SUFF  [fFlL]
 
 "sizeof"        { return KW_SIZEOF; }
 
-    /* ---------- Numeric constants ---------- */
-    /* On equal-length matches the earlier rule wins, so order matters. */
+    /* Numeric constants */
+    /* On equal-length matches the earlier rule wins, so order matters */
 
 0[xX]{HEX_DIGIT}+{INT_SUFFIX}?      { return HEX_LITERAL; }
 0{OCT_DIGIT}+{INT_SUFFIX}?          { return OCT_LITERAL; }
@@ -111,16 +109,15 @@ FLOAT_SUFF  [fFlL]
 "."{DIGIT}+{FLOAT_EXP}?{FLOAT_SUFF}?            { return FLOAT_LITERAL; }
 {DIGIT}+{FLOAT_EXP}{FLOAT_SUFF}?                { return FLOAT_LITERAL; }
 
-    /* Digits glued to letters (123abc, 0xZZ): only wins when longer than
-     * any valid constant. */
+    /* Digits glued to letters: only wins when longer than any valid constant */
 {DIGIT}({LETTER}|{DIGIT})*          { return LEX_BAD_NUMBER; }
 
-    /* ---------- Identifiers ---------- */
+    /* Identifiers */
 
 {IDENT}         { return IDENTIFIER; }
-    /* TYPE_NAME is decided by the bison adapter (yylex_bridge.c) */
+    /* TYPE_NAME is decided by the bison adapter */
 
-    /* ---------- Strings and characters ---------- */
+    /* Strings and characters */
 
 \"([^\\\"\n]|\\.)*\"        { return STRING_LITERAL; }
 \"([^\\\"\n]|\\.)*          { return LEX_UNTERMINATED_STRING; }
@@ -129,8 +126,8 @@ FLOAT_SUFF  [fFlL]
 \'([^\\\'\n]|\\.)+\'        { return CHAR_LITERAL; }
 \'([^\\\'\n]|\\.)*          { return LEX_UNTERMINATED_CHAR; }
 
-    /* ---------- Operators and delimiters ---------- */
-    /* Flex takes the longest match: "<<=" beats "<<" and "<". */
+    /* Operators and delimiters */
+    /* Flex takes the longest match */
 
 "+"     { return PLUS; }
 "-"     { return MINUS; }
@@ -185,8 +182,8 @@ FLOAT_SUFF  [fFlL]
 ","     { return COMMA; }
 "..."   { return ELLIPSIS; }
 
-    /* ---------- Lexical errors ---------- */
-    /* Returned as tokens of their own; the bison adapter reports and drops them. */
+    /* Lexical errors */
+    /* Returned as tokens of their own. The bison adapter reports and drops them */
 
 [\x80-\xFF]+    { return LEX_NON_ASCII; }
 
@@ -229,8 +226,7 @@ int scanner_init(const char *filename)
     return 1;
 }
 
-/* Returns the next token (bison code, lexeme, position). Free the lexeme
- * with token_free(). Keeps returning TOKEN_EOF once the input ends. */
+/* Returns the next token. Free the lexeme with token_free() */
 Token Get_Token(void)
 {
     Token token;

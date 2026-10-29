@@ -1,5 +1,5 @@
-/* Dev tool: prints the token stream returned by Get_Token().
- * Not part of the final program ("make tokdump"). */
+/* Prints the token stream returned by Get_Token()
+ * Not part of the final program */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 
     for (token = Get_Token(); token.type != TOKEN_EOF; token = Get_Token()) {
         printf("%4d:%-3d %-24s %s\n", token.line, token.column,
-               token_name(token.type), token.lexeme != NULL ? token.lexeme : "");
+                token_name(token.type), token.lexeme != NULL ? token.lexeme : "");
         token_free(&token);
     }
 

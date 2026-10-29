@@ -27,7 +27,7 @@ void diag_set_source_map(const PreprocessedFile *pp)
     source_map = pp;
 }
 
-/* Returns the text of a line of an original file (not NUL-terminated) */
+/* Returns the text of a line of an original file (not NUL) */
 static const char *line_text(const char *file, int line, size_t *length)
 {
     size_t start = 0, end;
@@ -55,8 +55,7 @@ static const char *line_text(const char *file, int line, size_t *length)
     return cached_source.content + start;
 }
 
-/* Prints the source line and a caret under the error (tabs are copied so the
- * caret stays aligned). */
+/* Prints the source line and a caret under the error */
 static void print_context(const char *file, int line, int col, int span, int color)
 {
     size_t length;
@@ -90,8 +89,7 @@ void diag_error(int line, int col, int len, const char *fmt, ...)
     int color = isatty(STDERR_FILENO);
     const char *file = preprocessor_origin(source_map, line, col, &orig_line, &orig_col);
 
-    /* Do not report two errors at the very same spot (a lexical error often
-     * triggers a syntax error on the same token). */
+    /* Do not report two errors at the very same spot */
     if (file != NULL) {
         if (last_valid && last_line == orig_line && last_col == orig_col && strcmp(last_file, file) == 0) return;
         last_valid = (strlen(file) < sizeof(last_file));

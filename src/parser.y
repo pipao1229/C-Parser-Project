@@ -27,7 +27,7 @@ static int decl_is_typedef = 0;
     int ival;
 }
 
-/* ---------- Keywords ---------- */
+/* Keywords */
 
 /* Types */
 %token KW_VOID "void" KW_CHAR "char" KW_SHORT "short" KW_INT "int" KW_LONG "long"
@@ -52,11 +52,11 @@ static int decl_is_typedef = 0;
 /* Other */
 %token KW_SIZEOF "sizeof"
 
-/* ---------- Identifiers ---------- */
+/* Identifiers */
 %token <str> IDENTIFIER "identifier"
 %token <str> TYPE_NAME "type name"
 
-/* ---------- Literals ---------- */
+/* Literals */
 %token DEC_LITERAL "decimal constant"
 %token OCT_LITERAL "octal constant"
 %token HEX_LITERAL "hexadecimal constant"
@@ -64,34 +64,33 @@ static int decl_is_typedef = 0;
 %token STRING_LITERAL "string literal"
 %token CHAR_LITERAL "character constant"
 
-/* ---------- Arithmetic operators ---------- */
+/* Arithmetic operators */
 %token PLUS "+" MINUS "-" STAR "*" SLASH "/" PERCENT "%"
 %token INCREMENT "++" DECREMENT "--"
 
-/* ---------- Assignment operators ---------- */
+/* Assignment operators */
 %token ASSIGN "=" ADD_ASSIGN "+=" SUB_ASSIGN "-=" MUL_ASSIGN "*=" DIV_ASSIGN "/="
 %token MOD_ASSIGN "%=" SHL_ASSIGN "<<=" SHR_ASSIGN ">>="
 %token AND_ASSIGN "&=" XOR_ASSIGN "^=" OR_ASSIGN "|="
 
-/* ---------- Relational operators ---------- */
+/* Relational operators */
 %token EQ "==" NEQ "!=" LT "<" GT ">" LE "<=" GE ">="
 
-/* ---------- Logical operators ---------- */
+/* Logical operators */
 %token LOGICAL_AND "&&" LOGICAL_OR "||" BANG "!"
 
-/* ---------- Bitwise operators ---------- */
+/* Bitwise operators */
 %token AMPERSAND "&" PIPE "|" CARET "^" TILDE "~" SHL "<<" SHR ">>"
 
-/* ---------- Member access and conditional ---------- */
+/* Member access and conditional */
 %token DOT "." ARROW "->" QUESTION "?" COLON ":"
 
-/* ---------- Delimiters ---------- */
+/* Delimiters */
 %token LPAREN "(" RPAREN ")" LBRACKET "[" RBRACKET "]" LBRACE "{" RBRACE "}"
 %token SEMICOLON ";" COMMA "," ELLIPSIS "..."
 
-/* ---------- Lexical errors ----------
- * Returned by Get_Token(); yylex() reports and drops them, so no grammar
- * rule uses them. */
+/*  Lexical errors 
+ * Returned by Get_Token(). yylex() reports and drops them, so no grammar rule uses them */
 %token LEX_BAD_CHAR LEX_NON_ASCII LEX_BAD_OCTAL LEX_BAD_NUMBER
 %token LEX_UNTERMINATED_STRING LEX_EMPTY_CHAR LEX_UNTERMINATED_CHAR
 
@@ -106,7 +105,7 @@ static int decl_is_typedef = 0;
 
 %%
 
-/* ---------- Expressions ---------- */
+/* Expressions */
 
 constant
     : DEC_LITERAL
@@ -265,7 +264,7 @@ constant_expression
     : conditional_expression
     ;
 
-/* ---------- Declarations ---------- */
+/* Declarations */
 
 declaration
     : declaration_specifiers ";"                     { end_declaration(); }
@@ -294,7 +293,7 @@ init_declarator
     ;
 
 /* The name is recorded right after the declarator, so a typedef is already
- * visible to the very next token. */
+ * visible to the very next token */
 declarator_decl
     : declarator    { symtab_declare($1, decl_is_typedef); $$ = $1; }
     ;
@@ -510,7 +509,7 @@ designator
     | "." member_name
     ;
 
-/* ---------- Statements ---------- */
+/* Statements */
 
 statement
     : labeled_statement
@@ -529,8 +528,7 @@ labeled_statement
 
 /* Each block opens a scope so local names can shadow typedefs. The depth is
  * saved so the scope is restored correctly even after error recovery.
- * Recovery (panic mode): after an error, skip tokens up to a safe point:
- * a ';' (end of statement), a '}' (end of block) or a '{' (start of a block). */
+ * Recovery: after an error, skip tokens up to a safe point */
 compound_statement
     : "{" "}"
     | compound_open block_item_list "}"               { symtab_restore($1); }
@@ -582,7 +580,7 @@ jump_statement
     | "return" expression ";"
     ;
 
-/* ---------- Top level ---------- */
+/* Top level */
 
 translation_unit
     : %empty
@@ -602,8 +600,7 @@ function_definition
     : function_head compound_statement     { symtab_restore($1); }
     ;
 
-/* The function name goes in the file scope; its parameters in a new scope
- * that stays open while the body is parsed. */
+/* The function name goes in the file scope, its parameters in a new scope that stays open while the body is parsed */
 function_head
     : declaration_specifiers declarator                       { $$ = begin_function($2); }
     | declaration_specifiers declarator declaration_list      { $$ = begin_function($2); }
@@ -634,7 +631,7 @@ static void note_param(const char *name)
     if (pending_count < MAX_PENDING_PARAMS) pending_params[pending_count++] = name;
 }
 
-/* Opens the function scope and declares its parameters; returns the depth to restore */
+/* Opens the function scope and declares its parameters. Returns the depth to restore */
 static int begin_function(const char *name)
 {
     int depth = symtab_depth();

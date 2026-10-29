@@ -9,7 +9,7 @@
 #define MAX_EXPECTED 8
 #define NAME_SIZE 64
 
-/* Bison names for token categories, with their Spanish description */
+/* Bison names for token categories, in Spanish */
 static const struct { const char *english, *spanish; } CATEGORY_NAMES[] = {
     {"identifier", "un identificador"},
     {"type name", "un nombre de tipo"},
@@ -22,7 +22,7 @@ static const struct { const char *english, *spanish; } CATEGORY_NAMES[] = {
     {"end of file", "el fin de archivo"}
 };
 
-/* Copies name without the surrounding double quotes bison adds to some tokens */
+/* Copies name without the double quotes bison adds to some tokens */
 static void clean_name(const char *start, size_t length, char *out)
 {
     if (length >= 2 && start[0] == '"' && start[length - 1] == '"') {
@@ -34,7 +34,7 @@ static void clean_name(const char *start, size_t length, char *out)
     out[length] = '\0';
 }
 
-/* Spanish description of a token name: a category in words, a symbol in quotes */
+/* Spanish description of a token name */
 static void describe(const char *name, char *out)
 {
     for (size_t i = 0; i < sizeof(CATEGORY_NAMES) / sizeof(CATEGORY_NAMES[0]); i++) {
@@ -77,7 +77,7 @@ void report_syntax_error(const char *bison_message)
     }
     at_eof = (strcmp(unexpected_name, "end of file") == 0);
 
-    /* What it was waiting for (bison lists up to four alternatives) */
+    /* What it was waiting for */
     if (expecting != NULL) {
         const char *cursor = expecting + strlen(", expecting ");
         while (*cursor != '\0' && expected_count < MAX_EXPECTED) {
@@ -123,8 +123,7 @@ void report_syntax_error(const char *bison_message)
         snprintf(message, sizeof(message), "token inesperado %s", found);
     }
 
-    /* Position: a missing ';' ')' etc. is best shown right after the previous
-     * token when the offending token starts a later line. */
+    /* Position: a missing ';' ')' etc. is best shown right after the previous token */
     if (wants_previous_end || at_eof) {
         int previous_line, previous_col;
         lexer_previous_end(&previous_line, &previous_col);

@@ -17,8 +17,7 @@
 #define PP_PATH_MAX 4096
 
 /* What to do with an unresolvable #include (missing or circular):
- * 0 = skip silently, 1 = report on stderr. Kept at 0 because the spec
- * penalizes any error that is not lexical or syntactic. */
+ * 0 = skip silently, 1 = report on stderr */
 #define PP_REPORT_INCLUDE_ERRORS 0
 
 /* Stores definition for both object-like and function-like macros */
@@ -126,16 +125,15 @@ static int lb_put(LineBuf *lb, char c, int col)
     return 1;
 }
 
-/* Original column of text[index]: user-written text maps one to one
- * (base_col + index); macro-expanded text (fixed_col > 0) maps entirely
- * to the column of the invoked macro name. */
+/* Original column of text[index]: user-written text maps one to one, 
+ * macro-expanded text maps entirely to the column of the invoked macro name */
 static int col_of(int base_col, int fixed_col, size_t index)
 {
     return (fixed_col > 0) ? fixed_col : base_col + (int)index;
 }
 
 static int lb_put_text(LineBuf *lb, const char *text, size_t count,
-                       int base_col, int fixed_col, size_t first_index)
+                        int base_col, int fixed_col, size_t first_index)
 {
     for (size_t k = 0; k < count; k++) {
         if (!lb_put(lb, text[k], col_of(base_col, fixed_col, first_index + k))) return 0;
@@ -163,7 +161,7 @@ static int pp_add_file(PreprocessedFile *pp, const char *name)
     return (int)pp->file_count++;
 }
 
-/* Registers an output line; the map takes ownership of the column array */
+/* Registers an output line, the map takes ownership of the column array */
 static int pp_push_line(PreprocessedFile *pp, int file, int line, LineBuf *lb)
 {
     if (pp->line_count == pp->lines_capacity) {
@@ -183,7 +181,7 @@ static int pp_push_line(PreprocessedFile *pp, int file, int line, LineBuf *lb)
     return 1;
 }
 
-/* Writes the line (plus '\n') to the temp file and records it in the map */
+/* Writes the line to the temp file and records it in the map */
 static int emit_line(FILE *output, PreprocessedFile *pp, int file_index, int line_no, LineBuf *lb)
 {
     int ok = 1;
@@ -306,8 +304,7 @@ static const Macro *macro_find(const MacroTable *table, const char *name)
 }
 
 /* Defines or redefines a macro. Copies are made before touching the table so
- * an allocation failure never leaves a half-built entry. Takes ownership of
- * 'params' (freed on failure). */
+ * an allocation failure never leaves a half-built entry */
 static int macro_store(MacroTable *table, const char *name, const char *value,
                        int is_function_like, char **params, size_t param_count)
 {
@@ -462,9 +459,7 @@ static void include_stack_pop(IncludeStack *stack)
 }
 
 /* Blanks out comments with spaces (newlines kept) so the output has the same
- * length as the input and all lines/columns still match the original.
- * String and char literals end at '\n', so an unterminated one cannot
- * swallow the rest of the file. */
+ * length as the input and all lines/columns still match the original */
 static int remove_comments(const char *input, size_t length, char **output, size_t *output_length)
 {
     char *result = malloc(length + 1);
@@ -558,8 +553,8 @@ static int parse_directive(const char *line, size_t length, char **directive, ch
 
     while (position < length && isalpha((unsigned char)line[position])) position++;
     if (position == start) {
-        if (position < length) return 0;   /* "# 33 ..." and the like: not ours */
-        *directive = copy_string("");      /* lone '#': null directive */
+        if (position < length) return 0;   
+        *directive = copy_string("");      
         *argument = copy_string("");
         return (*directive != NULL && *argument != NULL) ? 1 : -1;
     }
@@ -576,7 +571,7 @@ static int parse_directive(const char *line, size_t length, char **directive, ch
     return 1;
 }
 
-/* Appends a parameter to the list; frees 'p' on failure */
+/* Appends a parameter to the list, frees 'p' on failure */
 static int add_param(char ***params, size_t *count, char *p)
 {
     char **new_params = realloc(*params, (*count + 1) * sizeof(char *));
@@ -589,8 +584,8 @@ static int add_param(char ***params, size_t *count, char *p)
     return 1;
 }
 
-/* Handles a #define argument. Returns 0 only on out-of-memory;
- * a malformed #define is ignored. */
+/* Handles a #define argument. Returns 0 only on out-of-memory.
+ * A malformed #define is ignored */
 static int handle_define(MacroTable *macros, const char *argument)
 {
     size_t arg_len = strlen(argument), pos = 0;
@@ -607,7 +602,7 @@ static int handle_define(MacroTable *macros, const char *argument)
     int ok = 1;
 
     if (pos < arg_len && argument[pos] == '(') {
-        /* Function-like macro: #define NAME(a, b) body */
+        /* Function-like macro */
         char **params = NULL;
         size_t param_count = 0, p_start = ++pos;
         int closed = 0, failed = 0;
@@ -674,7 +669,7 @@ static void include_problem(const char *file, int line, const char *fmt, ...)
 #endif
 }
 
-/* Extracts the name from "file" or <file>; returns 0 if malformed */
+/* Extracts the name from "file" or <file>. Returns 0 if malformed */
 static int parse_include_target(const char *argument, char *name, size_t name_size, int *is_system)
 {
     char closing;
@@ -708,9 +703,7 @@ static int is_regular_file(const char *path)
     return stat(path, &info) == 0 && S_ISREG(info.st_mode);
 }
 
-/* Finds the file to include: "..." tries the including file's directory
- * first, then the working directory; <...> only the working directory
- * (system headers are never read). */
+/* Finds the file to include */
 static int resolve_include(const char *including_file, const char *name, int is_system,
                            char *out, size_t out_size)
 {
@@ -791,10 +784,7 @@ static char *instantiate_macro_body(const Macro *m, char **args)
     return out;
 }
 
-/* Expands identifiers and macro calls recursively into the line buffer.
- * base_col: original column (1-based) of text[0] for user-written text.
- * fixed_col: if > 0, text comes from a macro expansion and every character
- *            maps to this column (that of the invoked macro). */
+/* Expands identifiers and macro calls recursively into the line buffer */
 static int expand_text(LineBuf *lb, const char *text, size_t length, int base_col, int fixed_col,
                        MacroTable *macros, ActiveMacros *active)
 {
@@ -822,15 +812,14 @@ static int expand_text(LineBuf *lb, const char *text, size_t length, int base_co
             continue;
         }
 
-        /* Numbers are copied whole so suffixes (the L in 10L) are never
-         * mistaken for a macro name. */
+        /* Numbers are copied whole so suffixes are never mistaken for a macro name */
         if (isdigit((unsigned char)text[i]) ||
             (text[i] == '.' && i + 1 < length && isdigit((unsigned char)text[i + 1]))) {
             while (i < length) {
                 char c = text[i];
                 int sign_after_exp = (c == '+' || c == '-') && i > 0 &&
-                                     (text[i - 1] == 'e' || text[i - 1] == 'E' ||
-                                      text[i - 1] == 'p' || text[i - 1] == 'P');
+                                    (text[i - 1] == 'e' || text[i - 1] == 'E' ||
+                                    text[i - 1] == 'p' || text[i - 1] == 'P');
                 if (!(isalnum((unsigned char)c) || c == '_' || c == '.' || sign_after_exp)) break;
                 if (!lb_put(lb, c, col_of(base_col, fixed_col, i))) return 0;
                 i++;
@@ -999,7 +988,7 @@ static int process_builtin(FILE *output, PreprocessedFile *pp, const char *heade
     return process_buffer(output, pp, index, display, text, strlen(text), macros, active, inc_stack);
 }
 
-/* ---- #pragma once ---- */
+/* #pragma once */
 
 static char **once_files = NULL;
 static size_t once_count = 0, once_capacity = 0;
@@ -1034,7 +1023,7 @@ static void once_free(void)
     once_count = once_capacity = 0;
 }
 
-/* ---- Constant expressions for #if / #elif ---- */
+/* Constant expressions for #if / #elif */
 
 typedef struct {
     const char *p;
@@ -1271,7 +1260,7 @@ static char *substitute_defined(const char *expr, const MacroTable *macros)
     return out;
 }
 
-/* Evaluates the condition of #if / #elif. A malformed expression counts as false. */
+/* Evaluates the condition of #if / #elif. A malformed expression counts as false */
 static int eval_condition(const char *expr, MacroTable *macros, ActiveMacros *active)
 {
     char *substituted = substitute_defined(expr, macros);
@@ -1301,7 +1290,7 @@ static int eval_condition(const char *expr, MacroTable *macros, ActiveMacros *ac
     return !e.failed && value != 0;
 }
 
-/* ---- Conditional inclusion stack (one per file) ---- */
+/* Conditional inclusion stack (one per file) */
 
 typedef struct {
     int parent_active;   /* enclosing region is being emitted */
@@ -1336,7 +1325,7 @@ static int cond_push(CondStack *stack, int parent_active, int condition)
     return 1;
 }
 
-/* Macro name tested by #ifdef / #ifndef (first identifier of the argument) */
+/* Macro name tested by #ifdef / #ifndef */
 static int name_is_defined(const MacroTable *macros, const char *argument)
 {
     char name[256];
@@ -1374,7 +1363,7 @@ static int process_buffer(FILE *output, PreprocessedFile *pp, int file_index, co
         size_t line_length = line_end - line_start;
 
         /* Line splicing: a trailing backslash joins the next physical line.
-         * The logical line keeps the number of its first physical line. */
+         * The logical line keeps the number of its first physical line */
         free(joined);
         joined = NULL;
         if (line_length > 0 && line_ptr[line_length - 1] == '\\' && line_end < clean_length) {
@@ -1385,7 +1374,7 @@ static int process_buffer(FILE *output, PreprocessedFile *pp, int file_index, co
 
             for (;;) {
                 int continued = (cur_end > cur_start && without_comments[cur_end - 1] == '\\' &&
-                                 cur_end < clean_length);
+                                cur_end < clean_length);
                 size_t take = continued ? cur_end - 1 - cur_start : cur_end - cur_start;
 
                 memcpy(joined + joined_length, without_comments + cur_start, take);
@@ -1410,7 +1399,7 @@ static int process_buffer(FILE *output, PreprocessedFile *pp, int file_index, co
 
         if (directive_result == 1) {
             /* Directives emit no output line, but line_no keeps counting so
-             * the rest of the file keeps its original numbering. */
+             * the rest of the file keeps its original numbering */
             int emitting = cond_active(&conds);
             int ok = 1;
 
@@ -1476,7 +1465,7 @@ static int process_buffer(FILE *output, PreprocessedFile *pp, int file_index, co
                                 include_problem(filename, this_line,
                                                 "inclusion circular de \"%s\"", name);
                             } else if (!skip_once &&
-                                       !process_file(output, pp, resolved, macros, active, inc_stack)) {
+                                        !process_file(output, pp, resolved, macros, active, inc_stack)) {
                                 ok = 0;
                             }
                         }

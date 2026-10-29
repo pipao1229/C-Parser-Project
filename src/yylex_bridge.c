@@ -17,7 +17,7 @@ static int previous_end_line = 0, previous_end_col = 0;
 static int open_braces = 0, open_parens = 0;
 
 /* Repair of a missing ';': a virtual ';' is handed to the parser, followed by
- * the token that was already read (the lookahead), which is replayed as is. */
+ * the token that was already read (the lookahead) */
 typedef struct {
     int type;
     YYSTYPE value;
@@ -63,9 +63,9 @@ static int starts_statement(int type)
     }
 }
 
-/* Called after reporting "missing ';'". If the offending token starts a new
- * statement on a later line (and we are not inside parentheses), the parser
- * will be given a virtual ';' before it, so nothing has to be skipped. */
+/* Called after reporting a missing ';'. If the offending token starts a new
+ * statement on a later line (and not inside parentheses), the parser
+ * will be given a virtual ';' before it, so nothing has to be skipped */
 void lexer_request_repair(void)
 {
     if (!saved_valid || last_was_virtual || just_replayed || open_parens > 0) return;
@@ -99,36 +99,36 @@ static void report_lexical_error(const Token *token)
         case LEX_BAD_CHAR:
             if (isprint((unsigned char)text[0])) {
                 diag_error(token->line, token->column, token->length,
-                           "caracter inesperado '%c'", text[0]);
+                            "caracter inesperado '%c'", text[0]);
             } else {
                 diag_error(token->line, token->column, token->length,
-                           "caracter de control inesperado (0x%02X)",
-                           (unsigned char)text[0]);
+                            "caracter de control inesperado (0x%02X)",
+                            (unsigned char)text[0]);
             }
             break;
         case LEX_NON_ASCII:
             diag_error(token->line, token->column, token->length,
-                       "caracter no ASCII fuera de un string o caracter");
+                        "caracter no ASCII fuera de un string o caracter");
             break;
         case LEX_BAD_OCTAL:
             diag_error(token->line, token->column, token->length,
-                       "digito invalido en constante octal '%s'", text);
+                        "digito invalido en constante octal '%s'", text);
             break;
         case LEX_BAD_NUMBER:
             diag_error(token->line, token->column, token->length,
-                       "constante numerica invalida '%s'", text);
+                        "constante numerica invalida '%s'", text);
             break;
         case LEX_UNTERMINATED_STRING:
             diag_error(token->line, token->column, token->length,
-                       "string sin cerrar");
+                        "string sin cerrar");
             break;
         case LEX_EMPTY_CHAR:
             diag_error(token->line, token->column, token->length,
-                       "constante de caracter vacia");
+                        "constante de caracter vacia");
             break;
         case LEX_UNTERMINATED_CHAR:
             diag_error(token->line, token->column, token->length,
-                       "constante de caracter sin cerrar");
+                        "constante de caracter sin cerrar");
             break;
         default:
             break;
@@ -136,7 +136,7 @@ static void report_lexical_error(const Token *token)
 }
 
 /* Called by bison. Pulls tokens from Get_Token(), reports and drops lexical
- * errors (the parser never sees them) and fills yylval/yylloc. */
+ * errors and fills yylval/yylloc. */
 int yylex(void)
 {
     if (repair_armed) {
@@ -176,7 +176,7 @@ int yylex(void)
 
             /* Malformed numbers, strings and characters still stand for a
              * value, so they go on to the parser as a literal of that kind.
-             * Stray characters are dropped. */
+             * Stray characters are dropped */
             switch (type) {
                 case LEX_BAD_OCTAL:
                 case LEX_BAD_NUMBER:         type = DEC_LITERAL; break;
@@ -193,8 +193,8 @@ int yylex(void)
         yylloc.first_column = token.column;
         yylloc.last_column  = token.column + token.length - 1;
 
-        /* Lexer hack: an identifier declared with typedef is a TYPE_NAME.
-         * Names are interned, so the parser never has to free them. */
+        /* An identifier declared with typedef is a TYPE_NAME.
+         * Names are interned, so the parser never has to free them */
         if (type == IDENTIFIER) {
             yylval.str = symtab_intern(token.lexeme != NULL ? token.lexeme : "");
             if (symtab_is_typedef(yylval.str)) type = TYPE_NAME;
@@ -209,8 +209,7 @@ int yylex(void)
         if (type == LBRACE) open_braces++;
         if (type == RBRACE && open_braces > 0) open_braces--;
 
-        /* Parentheses cannot span braces, so a brace resets the count (this
-         * keeps one unbalanced '(' from disabling repairs for the whole file) */
+        /* Parentheses cannot span braces, so a brace resets the count */
         if (type == LPAREN) open_parens++;
         if (type == RPAREN && open_parens > 0) open_parens--;
         if (type == LBRACE || type == RBRACE) open_parens = 0;

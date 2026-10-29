@@ -1,5 +1,5 @@
-/* Dev tool: prints the preprocessed text with each line's origin.
- * "-c LINE COL" maps a preprocessed position to the original source. */
+/* Prints the preprocessed text with each line's origin.
+ * "-c LINE COL" maps a preprocessed position to the original source */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         if (len > 0 && buffer[len - 1] == '\n') buffer[len - 1] = '\0';
         if (i < pp.line_count) {
             printf("%3zu  %-22s %3d | %s\n", i + 1, pp.files[pp.lines[i].file],
-                   pp.lines[i].line, buffer);
+                    pp.lines[i].line, buffer);
         }
     }
     if (file != NULL) fclose(file);
