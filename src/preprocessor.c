@@ -1502,6 +1502,23 @@ done:
     return result;
 }
 
+/* Drops the '\r' of CRLF line endings (even doubled ones) so a trailing backslash still splices */
+static size_t strip_cr(char *buffer, size_t length)
+{
+    size_t w = 0;
+
+    for (size_t r = 0; r < length; r++) {
+        if (buffer[r] == '\r') {
+            size_t k = r;
+            while (k < length && buffer[k] == '\r') k++;
+            if (k < length && buffer[k] == '\n') continue;   /* part of a line ending */
+        }
+        buffer[w++] = buffer[r];
+    }
+    buffer[w] = '\0';
+    return w;
+}
+
 static int process_file(FILE *output, PreprocessedFile *pp, const char *filename,
                         MacroTable *macros, ActiveMacros *active, IncludeStack *inc_stack)
 {
@@ -1538,9 +1555,10 @@ static int process_file(FILE *output, PreprocessedFile *pp, const char *filename
         return 0;
     }
 
-    size_t bytes_read = fread(buffer, 1, (size_t)file_size, input);
+        size_t bytes_read = fread(buffer, 1, (size_t)file_size, input);
     buffer[bytes_read] = '\0';
     fclose(input);
+    bytes_read = strip_cr(buffer, bytes_read);
 
     int result = process_buffer(output, pp, file_index, filename, buffer, bytes_read,
                                 macros, active, inc_stack);

@@ -29,6 +29,19 @@ typedef struct {
 static SavedToken saved;
 static int saved_valid = 0;
 static int repair_armed = 0, replay_pending = 0, last_was_virtual = 0, just_replayed = 0;
+static int prev_type = 0;
+
+static int ends_type_specifier(int type)
+{
+    switch (type) {
+        case KW_VOID: case KW_CHAR: case KW_SHORT: case KW_INT: case KW_LONG:
+        case KW_FLOAT: case KW_DOUBLE: case KW_SIGNED: case KW_UNSIGNED: case KW_BOOL:
+        case KW_COMPLEX: case KW_IMAGINARY: case TYPE_NAME: case STAR:
+            return 1;
+        default:
+            return 0;
+    }
+}
 
 const char *lexer_last_lexeme(void)
 {
@@ -197,8 +210,9 @@ int yylex(void)
          * Names are interned, so the parser never has to free them */
         if (type == IDENTIFIER) {
             yylval.str = symtab_intern(token.lexeme != NULL ? token.lexeme : "");
-            if (symtab_is_typedef(yylval.str)) type = TYPE_NAME;
+            if (symtab_is_typedef(yylval.str) && !ends_type_specifier(prev_type)) type = TYPE_NAME;
         }
+        prev_type = type;
 
         /* Remember what the parser has seen, for error reporting */
         previous_end_line = last_end_line;

@@ -79,6 +79,7 @@ int main(int argc, char **argv)
     }
 
     diag_set_source_map(&preprocessed);
+    symtab_seed_standard_types();
     yyparse();
     scanner_close();
 

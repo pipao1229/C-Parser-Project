@@ -16,5 +16,6 @@ void symtab_enter_scope(void);
 void symtab_restore(int depth);
 
 void symtab_free(void);
+void symtab_seed_standard_types(void);
 
 #endif
